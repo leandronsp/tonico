@@ -1,28 +1,35 @@
+# frozen_string_literal: true
+
 require 'socket'
+require_relative 'handler'
 
 server = Socket.new(:INET, :STREAM)
+server.setsockopt(:SOL_SOCKET, :SO_REUSEADDR, true)
 addr = Socket.pack_sockaddr_in(3000, '0.0.0.0')
 
-## Bind the socket to the address
 server.bind(addr)
-server.listen(2)
+server.listen(Socket::SOMAXCONN)
 
-puts "Listening on port 3000"
+puts 'Listening on port 3000'
 
-# Main Thread (process)
+#loop do
+#  client, _ = server.accept 
+#
+#  Handler.call(client)
+#end
+
+io = []
+
 loop do
-  #client, _ = server.accept # Blocking I/O
+  ready_to_read, _ready_to_write, _ = IO.select(io, nil, nil, 0.1)
 
-  # emulate server.accept
-  begin
-    client, _ = server.accept_nonblock # I/O non-blocking
-  rescue IO::WaitReadable, Errno::EINTR
-    IO.select([server])
-    retry
+  ready_to_read&.each do |client|
+    io.delete(client)
+    Handler.call(client)
   end
 
-  puts "Client connected"
-
-  client.puts "HTTP/1.1 200\r\nContent-Type: application/json\r\n\r\n{}"
-  client.close
+  client, _addr = server.accept_nonblock
+  io << client
+rescue IO::WaitReadable, Errno::EINTR
+  retry
 end
