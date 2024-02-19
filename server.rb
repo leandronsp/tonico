@@ -12,24 +12,48 @@ server.listen(Socket::SOMAXCONN)
 
 puts 'Listening on port 3000'
 
+#tqueue = Queue.new
+#
+#5.times do
+#  Thread.new do
+#    loop do
+#      client = tqueue.pop
+#      Handler.call(client)
+#    end
+#  end
+#end
+
 #loop do
 #  client, _ = server.accept 
-#
 #  Handler.call(client)
 #end
 
-io = []
+fibers = []
+readable = {}
 
-loop do
-  ready_to_read, _ready_to_write, _ = IO.select(io, nil, nil, 0.1)
+accept = Fiber.new do
+  loop do
+    client, _addr = server.accept_nonblock
+    
+    Handler.call(client, fibers)
+  rescue IO::WaitReadable, Errno::EINTR
+    readable[server] = Fiber.current
+    Fiber.yield
+  end
+end
 
-  ready_to_read&.each do |client|
-    io.delete(client)
-    Handler.call(client)
+accept.resume
+
+loop do 
+  while fibers.any?
+    fiber = fibers.shift
+    fiber.resume if fiber&.alive?
   end
 
-  client, _addr = server.accept_nonblock
-  io << client
-rescue IO::WaitReadable, Errno::EINTR
-  retry
+  ready_to_read, _ready_to_write, _ = IO.select(readable.keys, nil, nil, 0.1)
+
+  ready_to_read&.each do |io|
+    fiber = readable.delete(io)
+    fiber.resume
+  end
 end

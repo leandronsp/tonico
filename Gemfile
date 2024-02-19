@@ -4,3 +4,4 @@ source 'https://rubygems.org'
 
 # Database
 gem 'pg'
+gem 'connection_pool'
