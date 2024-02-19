@@ -112,10 +112,12 @@ class Transaction
         if conn.is_busy && (db_result = conn.get_result)
           account = db_result.to_a.first
 
-          result.merge!({ 
-            limite: account['limit_amount'].to_i,
-            saldo: account['balance'].to_i
-          })
+          if account
+            result.merge!({ 
+              limite: account['limit_amount'].to_i,
+              saldo: account['balance'].to_i
+            })
+          end
         end
       end
     end

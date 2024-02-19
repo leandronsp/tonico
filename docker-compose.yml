@@ -13,6 +13,7 @@ services:
       target: base
     container_name: api1
     environment:
+      - DB_POOL_SIZE=40
       - DATABASE_HOST=postgres
       - RUBY_YJIT_ENABLE=1
       - ASYNC=1
@@ -26,7 +27,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.3'
+          cpus: '0.2'
           memory: '100MB'
 
   api2: 
@@ -41,7 +42,8 @@ services:
       - 5432:5432
     volumes:
       - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: postgres -c max_connections=30
+      - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -50,7 +52,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.7'
+          cpus: '1'
           memory: '300MB'
 
   nginx:
@@ -66,7 +68,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.2'
+          cpus: '0.1'
           memory: '50MB'
 
 volumes:
