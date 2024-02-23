@@ -8,6 +8,14 @@ help: ## Prints available commands
 bundle.install:
 	@docker-compose run api1 bundle
 
+tonico:
+	@docker-compose down
+	@docker-compose up -d 
+	@make docker.stats
+
+down:
+	@docker-compose down
+
 start.dev: ## Start the rinha in Dev
 	@docker-compose up -d nginx
 

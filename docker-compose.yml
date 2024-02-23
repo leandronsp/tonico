@@ -13,22 +13,16 @@ services:
       target: base
     container_name: api1
     environment:
-      - DB_POOL_SIZE=40
+      - DB_POOL_SIZE=10
       - DATABASE_HOST=postgres
       - RUBY_YJIT_ENABLE=1
-      - ASYNC=1
-    command: ruby server.rb
+    command: ruby async_server.rb
     volumes:
       - .:/app
       - rubygems:/usr/local/bundle
     depends_on:
       postgres:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: '100MB'
 
   api2: 
     <<: *api
@@ -49,11 +43,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: '300MB'
+
+  pgbouncer:
+    image: pgbouncer/pgbouncer
+    hostname: pgbouncer
+    container_name: pgbouncer
+    ports:
+      - 6432:6432
+    environment:
+      - DATABASES_HOST=postgres
+      - DATABASES_PORT=5432
+      - DATABASES_USER=postgres
+      - DATABASES_PASSWORD=postgres
+      - DATABASES_DBNAME=postgres
+      - DATABASES_POOL_SIZE=100
+      - PGBOUNCER_MAX_CLIENT_CONN=100
+      - PGBOUNCER_RESERVE_POOL_SIZE=100
+      - PGBOUNCER_DEFAULT_POOL_SIZE=100
+    depends_on:
+      - postgres
 
   nginx:
     image: nginx 
@@ -65,11 +73,6 @@ services:
     depends_on:
       - api1
       - api2
-    deploy:
-      resources:
-        limits:
-          cpus: '0.1'
-          memory: '50MB'
 
 volumes:
   rubygems:

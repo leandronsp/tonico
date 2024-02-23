@@ -9,7 +9,11 @@ class Database
   end
 
   def self.new_connection
-    PG.connect(host: (ENV['DATABASE_HOST'] || 'localhost'), user: 'postgres',
-               password: 'postgres', dbname: 'postgres')
+    PG.connect(
+      host: (ENV['DATABASE_HOST'] || 'localhost'), 
+      user: 'postgres',
+      password: 'postgres', 
+      dbname: 'postgres'
+    ).tap { |conn| conn.setnonblocking(true) }
   end
 end
