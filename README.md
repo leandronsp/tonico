@@ -4,6 +4,8 @@ Uma versão em Ruby puro utilizando async I/O da [rinha do backend 2ª edição]
 
 Este projeto contempla o uso de syscall (select/epoll) e multitasking cooperativo com Fibers.
 
+![Screenshot 2024-02-28 at 18 15 48](https://github.com/leandronsp/tonico/assets/385640/8d6ef2a3-232f-4f96-9190-bf91395f07aa)
+
 ## Requisitos
 
 * [Docker](https://docs.docker.com/get-docker/)
