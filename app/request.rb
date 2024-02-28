@@ -16,7 +16,7 @@ class Request
       request = "#{verb} /clientes/:id/#{action}"
     end
 
-    puts "[#{Time.now}] #{message}"
+    #puts "[#{Time.now}] #{message}"
 
     while (line = client.gets)
       break if line == "\r\n"

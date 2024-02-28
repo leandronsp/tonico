@@ -35,5 +35,7 @@ puts 'Listening on port 3000'
   PG::Connection.connect_start(config)
 end
 
-Acceptor.call(@state, server)
+acceptor = Acceptor.new(@state)
+acceptor.resume(server)
+
 EventLoop.run(@state)
