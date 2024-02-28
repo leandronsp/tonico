@@ -55,25 +55,6 @@ services:
           cpus: '0.9'
           memory: '300MB'
 
-  pgbouncer:
-    image: pgbouncer/pgbouncer
-    hostname: pgbouncer
-    container_name: pgbouncer
-    ports:
-      - 6432:6432
-    environment:
-      - DATABASES_HOST=postgres
-      - DATABASES_PORT=5432
-      - DATABASES_USER=postgres
-      - DATABASES_PASSWORD=postgres
-      - DATABASES_DBNAME=postgres
-      - DATABASES_POOL_SIZE=20
-      - PGBOUNCER_MAX_CLIENT_CONN=20
-      - PGBOUNCER_RESERVE_POOL_SIZE=20
-      - PGBOUNCER_DEFAULT_POOL_SIZE=20
-    depends_on:
-      - postgres
-
   nginx:
     image: nginx 
     container_name: nginx
