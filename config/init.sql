@@ -1,5 +1,5 @@
 CREATE TABLE accounts (
-	id SERIAL PRIMARY KEY,
+	id SERIAL UNIQUE NOT NULL,
 	name VARCHAR(50) NOT NULL,
 	limit_amount INTEGER NOT NULL,
 	balance INTEGER NOT NULL
@@ -15,6 +15,9 @@ CREATE TABLE transactions (
 	CONSTRAINT fk_accounts_transactions_id
 		FOREIGN KEY (account_id) REFERENCES accounts(id)
 );
+
+CREATE INDEX idx_cov_accounts ON accounts(id) INCLUDE (limit_amount, balance);
+CREATE INDEX idx_transactions_account_id ON transactions(account_id);
 
 DO $$
 BEGIN

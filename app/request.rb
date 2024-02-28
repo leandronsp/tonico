@@ -1,8 +1,5 @@
 require 'json'
 
-require_relative 'bank_statement'
-require_relative 'transaction'
-
 class Request 
   def self.parse(client)
     request = ''
