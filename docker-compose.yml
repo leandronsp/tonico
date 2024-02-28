@@ -15,7 +15,6 @@ services:
     environment:
       - DB_POOL_SIZE=10
       - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
       - RUBY_YJIT_ENABLE=1
     command: ruby server.rb
     volumes:
