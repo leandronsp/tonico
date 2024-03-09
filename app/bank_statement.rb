@@ -15,26 +15,24 @@ class BankStatement
     result = {}
 
     Database.pool.with do |conn|
-      conn.transaction do 
-        account = conn.exec_params(sql_select_account, [@account_id]).first
-        raise NotFoundError unless account
+      account = conn.exec_params(sql_select_account, [@account_id]).first
+      raise NotFoundError unless account
 
-        result["saldo"] = {  
-          "total": account['balance'].to_i,
-          "data_extrato": Time.now.strftime("%Y-%m-%d"),
-          "limite": account['limit_amount'].to_i
+      result["saldo"] = {  
+        "total": account['balance'].to_i,
+        "data_extrato": Time.now.strftime("%Y-%m-%d"),
+        "limite": account['limit_amount'].to_i
+      }
+
+      ten_transactions = conn.exec_params(sql_ten_transactions, [@account_id])
+
+      result["ultimas_transacoes"] = ten_transactions.map do |transaction|
+        { 
+          "valor": transaction['amount'].to_i,
+          "tipo": transaction['transaction_type'],
+          "descricao": transaction['description'],
+          "realizada_em": transaction['date']
         }
-
-        ten_transactions = conn.exec_params(sql_ten_transactions, [@account_id])
-
-        result["ultimas_transacoes"] = ten_transactions.map do |transaction|
-          { 
-            "valor": transaction['amount'].to_i,
-            "tipo": transaction['transaction_type'],
-            "descricao": transaction['description'],
-            "realizada_em": transaction['date']
-          }
-        end
       end
 
       result
