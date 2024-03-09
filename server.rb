@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 require 'socket'
-require 'pg'
-require 'connection_pool'
+require_relative 'app/handler'
 
-require_relative 'app/acceptor'
-require_relative 'app/event_loop'
+require 'async'
+require 'async/scheduler'
+
+scheduler = Async::Scheduler.new
+Fiber.set_scheduler(scheduler)
 
 server = Socket.new(:INET, :STREAM)
 server.setsockopt(:SOL_SOCKET, :SO_REUSEADDR, true)
@@ -16,26 +18,13 @@ server.listen(Socket::SOMAXCONN)
 
 puts 'Listening on port 3000'
 
-@state = { 
-  readable: {},
-  writable: {},
-  waiting_pool: {},
-  waiting_query: {},
-}
+Fiber.schedule do
+  loop do
+    client, _ = server.accept
 
-@state[:pool] = ConnectionPool.new(size: (ENV['DB_POOL_SIZE'] || 10), timeout: 300) do 
-  config = {
-    host: (ENV['DATABASE_HOST'] || 'localhost'),
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres', 
-    dbname: 'postgres'
-  }
-
-  PG::Connection.connect_start(config)
+    Fiber.schedule do
+      Handler.call(client)
+      client.close
+    end
+  end
 end
-
-acceptor = Acceptor.new(@state)
-acceptor.resume(server)
-
-EventLoop.run(@state)

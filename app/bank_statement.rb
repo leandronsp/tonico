@@ -1,75 +1,63 @@
-# Returns: 
-#   - waiting_pool
-#   - waiting_query
-#   - not_found
-#   - result
-class BankStatement < Fiber 
-  def initialize(state)
-    @state = state
-    @pool = @state[:pool]
+require_relative 'database'
 
-    super(&lambda do |params|
-      if @pool.available == 0
-        Fiber.yield(:waiting_pool, @pool)
-      end
+class BankStatement
+  class NotFoundError < StandardError; end
 
-      @pool.with do |conn|
-        poll_status = conn.connect_poll
+  def self.call(*args)
+    new(*args).call
+  end
 
-        until poll_status == PG::PGRES_POLLING_OK || poll_status == PG::PGRES_POLLING_FAILED
-          case poll_status
-          in PG::PGRES_POLLING_READING
-            IO.select([conn.socket_io], nil, nil)
-          in PG::PGRES_POLLING_WRITING
-            IO.select(nil, [conn.socket_io], nil)
-          end
+  def initialize(account_id)
+    @account_id = account_id
+  end
 
-          poll_status = conn.connect_poll
+  def call
+    result = {}
+
+    Database.pool.with do |conn|
+      conn.transaction do 
+        account = conn.exec_params(sql_select_account, [@account_id]).first
+        raise NotFoundError unless account
+
+        result["saldo"] = {  
+          "total": account['balance'].to_i,
+          "data_extrato": Time.now.strftime("%Y-%m-%d"),
+          "limite": account['limit_amount'].to_i
+        }
+
+        ten_transactions = conn.exec_params(sql_ten_transactions, [@account_id])
+
+        result["ultimas_transacoes"] = ten_transactions.map do |transaction|
+          { 
+            "valor": transaction['amount'].to_i,
+            "tipo": transaction['transaction_type'],
+            "descricao": transaction['description'],
+            "realizada_em": transaction['date']
+          }
         end
-
-        conn.send_query_params(sql_account, [params['id']])
-        Fiber.yield(:waiting_query, conn)
-
-        result = conn.get_result
-        conn.discard_results
-
-        account = result.to_a.first
-        Fiber.yield(:not_found, nil) unless account
-
-        conn.send_query_params(sql_ten_transactions, [params['id']])
-        Fiber.yield(:waiting_query, conn)
-
-        result = conn.get_result
-        conn.discard_results
-
-        ten_transactions = result.to_a
-
-        [:result, [account, ten_transactions]]
       end
-    end)
+
+      result
+    end
   end
 
-  def sql_account
-    <<~SQL
-      SELECT 
-        limit_amount,
-        balance
-      FROM accounts
-      WHERE id = $1
-    SQL
-  end
+  private 
 
   def sql_ten_transactions
     <<~SQL
-      SELECT 
-              amount, 
-              transaction_type, 
-              description, 
-              TO_CHAR(date, 'YYYY-MM-DD HH:MI:SS.US') AS date
+      SELECT amount, transaction_type, description, TO_CHAR(date, 'YYYY-MM-DD HH:MI:SS.US')
       FROM transactions
       WHERE transactions.account_id = $1
       ORDER BY date DESC
       LIMIT 10
+    SQL
+  end
+
+  def sql_select_account
+    <<~SQL
+      SELECT balance, limit_amount
+      FROM accounts 
+      WHERE id = $1
     SQL
   end
 end

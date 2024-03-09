@@ -1,14 +1,29 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    async (2.9.0)
+      console (~> 1.10)
+      fiber-annotation
+      io-event (~> 1.5, >= 1.5.1)
+      timers (~> 4.1)
     connection_pool (2.4.1)
+    console (1.23.5)
+      fiber-annotation
+      fiber-local
+      json
+    fiber-annotation (0.2.0)
+    fiber-local (1.0.0)
+    io-event (1.5.1)
+    json (2.7.1)
     pg (1.5.5)
+    timers (4.3.5)
 
 PLATFORMS
   ruby
   x86_64-linux
 
 DEPENDENCIES
+  async
   connection_pool
   pg
 
